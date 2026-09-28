@@ -4,6 +4,7 @@ Pipeline ML orchestré avec Prefect.
 """
 
 import argparse
+import os
 import subprocess  # nosec B404
 import sys
 
@@ -93,11 +94,27 @@ def evaluate_task(model, x_test, y_test):
     return evaluate_model(model, x_test, y_test)
 
 
+REPO_URL = "https://github.com/Farahouri/ml_project.git"
+
+
+@task(name="Récupération du projet")
+def clone_repo(repo_url=REPO_URL, target_dir="ml_project_clone"):
+    if os.path.isdir(target_dir):
+        subprocess.run(["git", "-C", target_dir, "pull"], check=True)  # nosec B603 B607
+    else:
+        subprocess.run(  # nosec B603 B607
+            ["git", "clone", repo_url, target_dir], check=True
+        )
+    print("Projet récupéré.")
+
+
 # ---------- FLOWS ----------
 
 
 @flow(name="code")
 def code_flow():
+    clone_repo()
+    install_dependencies()
     install_dependencies()
     format_code()
     quality_code()
